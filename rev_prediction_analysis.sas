@@ -33,3 +33,16 @@ from sales s
 left join customers c ON s.customer_id = c.id
 left join products p ON s.product_id = p.id
 ;QUIT;
+
+
+/*
+Find our top customers. Which customers bring in the most money 
+to the company
+*/
+PROC SQL;
+SELECT customer_name, sum(profit) as total_profit
+FROM complete_df
+GROUP BY customer_name
+ORder BY profit DESC
+;QUIT;
+
