@@ -92,3 +92,38 @@ run;
 
 ods graphics / reset;
 
+
+/* Calculate Concentration using the Herfindal index */
+/* This measures the concentration in terms of contribution to the group */
+/* The larger the measure, the more concentrated the group is */
+/* First find profit earned for EACH CUSTOMER */
+PROC SQL;
+CREATE TABLE herfin AS
+SELECT customer_name,sum(profit) as total_profit
+FROM complete_df
+GROUP BY customer_name
+;QUIT;
+
+/* Find the percentage of profits contributed for each customer */
+PROC SQL;
+CREATE TABLE herfin_pct AS
+SELECT *, total_profit/sum(total_profit) as pct_profit
+FROM herfin
+;QUIT;
+
+/* Square the numbers (profit) */
+PROC SQL;
+SELECT sum(pct_profit*pct_profit) as Herfindal, 1/count(*) as benchmark
+FROM herfin_pct
+;QUIT;
+
+/*
+The Herfindal level is higher than the benchmark (0.015032 to 0.00141)
+ where every customer spend the same amount of money. The Herfindal
+ level is much lower than the limit of 1 where a single customer
+ represents all the revenue
+ Conclusion: our profits are NOT concentrated to the customers and less
+ affected by customer changes
+ */
+
+
