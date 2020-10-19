@@ -1,4 +1,4 @@
-# revenue-prediction-SAS
+# Customer Transaction Analysis with SAS
 
 ## Objectives
 
