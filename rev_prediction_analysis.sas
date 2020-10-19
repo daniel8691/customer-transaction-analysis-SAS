@@ -127,3 +127,29 @@ The Herfindal level is higher than the benchmark (0.015032 to 0.00141)
  */
 
 
+
+
+PROC PRINT DATA= returns (obs=10);RUN;
+PROC PRINT DATA=complete_df (obs=10);RUN;
+
+
+/* Find products with the highest "RETURN" rate */
+PROC SQL;
+CREATE TABLE complete_returns as
+SELECT r.*, c.Product_Name
+FROM returns r
+LEFT JOIN complete_df c ON r.Order_ID = c.Order_ID
+;QUIT;
+
+/* Sorted and group the returns data table */
+PROC SQL;
+/* CREATE TABLE grouped_returns as */
+SELECT product_name, COUNT(product_name) as returns
+FROM complete_returns
+GROUP BY product_name
+ORDER BY returns DESC
+;QUIT;
+
+/* 
+Should contact suppliers to see if there are any product quality issues
+ */
