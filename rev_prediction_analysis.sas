@@ -46,3 +46,16 @@ GROUP BY customer_name
 ORder BY profit DESC
 ;QUIT;
 
+PROC PRINT DATA=profit_per_cust (obs=10);RUN;
+
+
+/* Find the REGION DISTRIBUTION (provinces) of sales */
+PROC SQL;
+CREATE TABLE region_distribution AS
+SELECT province, sum(Sales) as total_sales
+FROM complete_df
+GROUP BY province
+ORDER BY total_sales DESC
+;QUIT;
+
+PROC PRINT DATA=region_distribution (obs=10);RUN;
