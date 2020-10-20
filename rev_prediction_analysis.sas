@@ -177,6 +177,14 @@ The Herfindal level is higher than the benchmark (0.028762 to 0.000915)
  */
 
 
+/* Determine shipping costs for each product */
+PROC SQL;
+SELECT product_name, AVG(shipping_cost) as avg_shipping_cost
+FROM complete_df
+GROUP BY product_name
+ORDER BY avg_shipping_cost DESC
+;QUIT;
+
 
 
 PROC PRINT DATA= returns (obs=10);RUN;
