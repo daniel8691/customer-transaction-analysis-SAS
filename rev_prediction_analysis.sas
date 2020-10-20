@@ -18,7 +18,6 @@ PROC IMPORT DATAFILE="/folders/myfolders/SAS Udemy/Revenue prediction case study
 			OUT=sales
 			REPLACE;
 RUN;
-
 PROC PRINT DATA=customers (obs=10); RUN;
 PROC PRINT DATA=products (obs=10);RUN;
 PROC PRINT DATA= returns (obs=10);RUN;
@@ -34,16 +33,19 @@ left join customers c ON s.customer_id = c.id
 left join products p ON s.product_id = p.id
 ;QUIT;
 
+PROC PRINT DATA=complete_df (obs=10);RUN;
+
 
 /*
 Find our top customers. Which customers bring in the most money 
 to the company
 */
 PROC SQL;
+CREATE TABLE profit_per_cust AS
 SELECT customer_name, sum(profit) as total_profit
 FROM complete_df
 GROUP BY customer_name
-ORder BY profit DESC
+ORDER BY total_profit DESC
 ;QUIT;
 
 PROC PRINT DATA=profit_per_cust (obs=10);RUN;
@@ -122,6 +124,54 @@ The Herfindal level is higher than the benchmark (0.015032 to 0.00141)
  where every customer spend the same amount of money. The Herfindal
  level is much lower than the limit of 1 where a single customer
  represents all the revenue
+ Conclusion: our profits are NOT concentrated to the customers and less
+ affected by customer changes
+ */
+
+
+
+/* Identify the best selling products */
+PROC SQL;
+CREATE TABLE product_sales as 
+SELECT Product_Name, sum(profit) as total_profit
+FROM complete_df
+GROUP BY Product_Name
+ORDER BY total_profit DESC
+;QUIT;
+
+PROC SQL;
+CREATE TABLE pct_product as
+SELECT product_name, total_profit, ROUND((total_profit/sum(total_profit)*100),.01) as pct_profit
+FROM product_sales
+ORDER BY pct_profit DESC
+;QUIT;
+
+/* Check to see if the company rely on their top products */
+PROC SQL;
+CREATE TABLE herfin1 AS
+SELECT product_name,sum(profit) as total_profit
+FROM complete_df
+GROUP BY product_name
+;QUIT;
+
+/* Find the percentage of profits contributed for each customer */
+PROC SQL;
+CREATE TABLE herfin_pct1 AS
+SELECT *, total_profit/sum(total_profit)as pct_profit
+FROM herfin1
+;QUIT;
+
+/* Square the numbers (profit) */
+PROC SQL;
+SELECT sum(pct_profit*pct_profit) as Herfindal, 1/count(*) as benchmark
+FROM herfin_pct1
+;QUIT;
+
+/*
+The Herfindal level is higher than the benchmark (0.028762 to 0.000915)
+ The benchmark is the number if every product generates the same profit. 
+ The Herfindal level is much lower than the limit of 1 where a single customer
+ represents all the revenue.
  Conclusion: our profits are NOT concentrated to the customers and less
  affected by customer changes
  */
