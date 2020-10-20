@@ -18,10 +18,12 @@ PROC IMPORT DATAFILE="/folders/myfolders/SAS Udemy/Revenue prediction case study
 			OUT=sales
 			REPLACE;
 RUN;
+
 PROC PRINT DATA=customers (obs=10); RUN;
 PROC PRINT DATA=products (obs=10);RUN;
 PROC PRINT DATA= returns (obs=10);RUN;
 PROC PRINT DATA=sales(obs=10);RUN;
+
 
 
 /* Merge all datasets except returns into one single table */
@@ -50,6 +52,13 @@ ORDER BY total_profit DESC
 
 PROC PRINT DATA=profit_per_cust (obs=10);RUN;
 
+/* Find the top selling product categories */
+PROC SQL;
+SELECT product_sub_category, avg(profit) as avg_profit
+FROM complete_df
+GROUP BY product_sub_category
+ORDER BY avg_profit DESC
+;QUIT;
 
 /* Find the REGION DISTRIBUTION (provinces) of sales */
 PROC SQL;
@@ -65,12 +74,14 @@ PROC PRINT DATA=region_distribution (obs=10);RUN;
 /* Create a table showing the PERCENTAGE of the region distribution */
 PROC SQL;
 CREATE TABLE pct_distribution AS
-SELECT province, total_sales, FORMAT((total_sales/sum(total_sales)),'P') as pct_sales
+SELECT province, total_sales, total_sales/sum(total_sales) as pct_sales
 FROM region_distribution;
 ;QUIT;
 
-PROC PRINT DATA = pct_distribution (obs=10);
+PROC SORT DATA = pct_distribution (obs=10);
+	by pct_sales;
 FORMAT pct_sales percent10.2;
+
 RUN;
 
 
@@ -179,10 +190,20 @@ The Herfindal level is higher than the benchmark (0.028762 to 0.000915)
 
 /* Determine shipping costs for each product */
 PROC SQL;
+CREATE TABLE avg_shipping as
 SELECT product_name, AVG(shipping_cost) as avg_shipping_cost
 FROM complete_df
 GROUP BY product_name
 ORDER BY avg_shipping_cost DESC
+;QUIT;
+
+/* Determine shipping costs by mode */
+PROC SQL;
+CREATE TABLE shipping_costs_by_mode as
+SELECT ship_mode, avg(shipping_cost) as avg_shipping_cost
+FROM complete_df
+GROUP BY ship_mode
+ORDER BY avg_shipping_cost
 ;QUIT;
 
 
@@ -201,12 +222,42 @@ LEFT JOIN complete_df c ON r.Order_ID = c.Order_ID
 
 /* Sorted and group the returns data table */
 PROC SQL;
-/* CREATE TABLE grouped_returns as */
+CREATE TABLE grouped_returns as
 SELECT product_name, COUNT(product_name) as returns
 FROM complete_returns
 GROUP BY product_name
 ORDER BY returns DESC
 ;QUIT;
+
+/* Find out how many times each product was purchased and find return rate */
+PROC SQL;
+CREATE TABLE product_purchased_count as
+SELECT product_name, count(product_name) as product_count
+FROM complete_df
+GROUP BY product_name
+;QUIT;
+
+PROC PRINT DATA=product_purchased_count(obs=10);run;
+PROC PRINT DATA=complete_returns(obs=10);run;
+
+/* Join table with complete_returns */
+PROC SQL;
+CREATE TABLE product_returnswith_count as 
+SELECT g.*, p.product_count
+FROM grouped_returns g 
+LEFT JOIN product_purchased_count p ON g.product_name = p.product_name
+;QUIT;
+
+
+PROC PRINT DATA = product_returnswith_count (obs=10);RUN;
+
+/* Calculate the return rates for each product */
+PROC SQL;
+SELECT *, returns/product_count*100 as return_rate
+FROM product_returnswith_count
+ORDER BY returns DESC
+;QUIT;
+
 
 /* 
 Should contact suppliers to see if there are any product quality issues
